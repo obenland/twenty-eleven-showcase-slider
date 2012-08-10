@@ -4,7 +4,7 @@
  * Plugin Name:	Twenty Eleven Showcase Slider
  * Plugin URI:	http://en.wp.obenland.it/twenty-eleven-showcase-slider/#utm_source=wordpress&utm_medium=plugin&utm_campaign=twenty-eleven-showcase-slider
  * Description:	Adds carousel functionality to the Twenty Eleven Showcase slider.
- * Version:		1.0.0
+ * Version:		1.0.1
  * Author:		Konstantin Obenland
  * Author URI:	http://en.wp.obenland.it/#utm_source=wordpress&utm_medium=plugin&utm_campaign=twenty-eleven-showcase-slider
  * Text Domain: twenty-eleven-showcase-slider

@@ -1,10 +1,10 @@
 === Twenty Eleven Showcase Slider ===
-Contributors: kobenland
+Contributors: obenland
 Tags: twentyeleven, slider
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=3DBDUTYMCVRG4
 Requires at least: 3.1
-Tested up to: 3.4
-Stable tag: 1.0.0
+Tested up to: 3.4.1
+Stable tag: 1.0.1
 
 Adds carousel functionality to the Twenty Eleven Showcase slider.
 
@@ -27,6 +27,9 @@ None asked yet.
 
 
 == Changelog ==
+
+= 1.0.1 =
+* Updated documentation.
 
 = 1.0 =
 * Initial Release
