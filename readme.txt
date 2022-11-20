@@ -4,7 +4,7 @@ Tags: twentyeleven, slider
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=3DBDUTYMCVRG4
 Requires at least: 3.1
 Tested up to: 6.1
-Stable tag: 2
+Stable tag: 3
 
 Adds carousel functionality to the Twenty Eleven Showcase slider.
 
@@ -27,6 +27,11 @@ None asked yet.
 
 
 == Changelog ==
+
+= 3 =
+* Maintenance release.
+* Removed unused code.
+* Tested for WordPress 6.1.
 
 = 2 =
 * Maintenance release.
