@@ -3,7 +3,7 @@ Contributors: obenland
 Tags: twentyeleven, slider
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=3DBDUTYMCVRG4
 Requires at least: 3.1
-Tested up to: 6.1
+Tested up to: 6.4
 Stable tag: 3
 
 Adds carousel functionality to the Twenty Eleven Showcase slider.
