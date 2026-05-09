@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
     update:
+        if: github.ref == 'refs/heads/trunk'
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v6
@@ -75,6 +76,7 @@ jobs:
               id: pr
               uses: peter-evans/create-pull-request@v8
               with:
+                  base: trunk
                   commit-message: 'Bump Tested up to ${{ steps.wp.outputs.version }}'
                   title: 'Bump Tested up to ${{ steps.wp.outputs.version }}'
                   body: |
@@ -90,3 +92,11 @@ jobs:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
                   gh pr merge --auto --squash --delete-branch "${{ steps.pr.outputs.pull-request-number }}"
+
+            - name: Sync readme to WordPress.org SVN
+              if: steps.pr.outputs.pull-request-number
+              uses: 10up/action-wordpress-plugin-asset-update@stable
+              env:
+                  SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+                  SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+                  IGNORE_OTHER_FILES: true
