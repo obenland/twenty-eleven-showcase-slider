@@ -24,18 +24,21 @@ jobs:
               shell: bash
               run: |
                   set -euo pipefail
-                  latest=$(curl -fsSL https://api.wordpress.org/core/version-check/1.7/ | jq -r '.offers[0].version')
+                  latest=$(curl -fsSL --connect-timeout 30 --max-time 60 --retry 3 --retry-delay 2 https://api.wordpress.org/core/version-check/1.7/ | jq -r '.offers[0].version')
                   if ! [[ "$latest" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
-                    echo "Unexpected WordPress version: '$latest'" >&2
-                    exit 1
+                      echo "Unexpected WordPress version: '$latest'" >&2
+                      exit 1
                   fi
                   short=$(echo "$latest" | awk -F. '{print $1"."$2}')
                   if ! [[ "$short" =~ ^[0-9]+\.[0-9]+$ ]]; then
-                    echo "Failed to derive major.minor from '$latest'" >&2
-                    exit 1
+                      echo "Failed to derive major.minor from '$latest'" >&2
+                      exit 1
                   fi
-                  echo "version=$short" >> "$GITHUB_OUTPUT"
-                  echo "Latest WordPress: $latest (short: $short)"
+                  {
+                      echo "version=$short"
+                      echo "full=$latest"
+                  } >> "$GITHUB_OUTPUT"
+                  echo "Latest WordPress: $latest (major.minor: $short)"
 
             - name: Update readme.txt
               id: update
@@ -43,27 +46,27 @@ jobs:
               run: |
                   set -euo pipefail
                   target='${{ steps.wp.outputs.version }}'
-                  current=$(grep -i '^Tested up to:' readme.txt | head -1 | sed -E 's/^[Tt]ested up to:[[:space:]]+//' | tr -d '\r')
+                  current=$(sed -nE '/^[Tt]ested up to:/{s/^[Tt]ested up to:[[:space:]]+//;s/\r$//;p;q;}' readme.txt)
                   if [ -z "$current" ]; then
-                    echo "Could not find 'Tested up to:' header in readme.txt" >&2
-                    exit 1
+                      echo "Could not find 'Tested up to:' header in readme.txt" >&2
+                      exit 1
                   fi
-                  # Only bump if current is strictly older than target (never downgrade).
-                  older=$(printf '%s\n%s\n' "$current" "$target" | sort -V | head -1)
+                  sorted=$(printf '%s\n%s\n' "$current" "$target" | sort -V)
+                  older="${sorted%%$'\n'*}"
                   if [ "$current" = "$target" ] || [ "$older" != "$current" ]; then
-                    echo "Current ($current) is at or ahead of target ($target); nothing to do."
-                    echo "updated=false" >> "$GITHUB_OUTPUT"
-                    exit 0
+                      echo "Current ($current) is at or ahead of target ($target); nothing to do."
+                      echo "updated=false" >> "$GITHUB_OUTPUT"
+                      exit 0
                   fi
                   sed -i -E "s/^([Tt]ested up to:[[:space:]]+).*/\1$target/" readme.txt
-                  new=$(grep -i '^Tested up to:' readme.txt | head -1 | sed -E 's/^[Tt]ested up to:[[:space:]]+//' | tr -d '\r')
+                  new=$(sed -nE '/^[Tt]ested up to:/{s/^[Tt]ested up to:[[:space:]]+//;s/\r$//;p;q;}' readme.txt)
                   if [ "$new" != "$target" ]; then
-                    echo "sed did not produce expected value (got '$new')" >&2
-                    exit 1
+                      echo "sed did not produce expected value (got '$new')" >&2
+                      exit 1
                   fi
                   {
-                    echo "updated=true"
-                    echo "previous=$current"
+                      echo "updated=true"
+                      echo "previous=$current"
                   } >> "$GITHUB_OUTPUT"
                   echo "Bumped Tested up to: $current -> $target"
 
@@ -75,9 +78,9 @@ jobs:
                   commit-message: 'Bump Tested up to ${{ steps.wp.outputs.version }}'
                   title: 'Bump Tested up to ${{ steps.wp.outputs.version }}'
                   body: |
-                      WordPress ${{ steps.wp.outputs.version }} is now the latest stable release.
+                      WordPress ${{ steps.wp.outputs.full }} is the latest stable release.
 
-                      Bumps `Tested up to` in readme.txt from ${{ steps.update.outputs.previous }} to ${{ steps.wp.outputs.version }}.
+                      Bumps `Tested up to` in readme.txt from ${{ steps.update.outputs.previous }} to ${{ steps.wp.outputs.version }} (major.minor of ${{ steps.wp.outputs.full }}).
                   branch: chore/tested-up-to-${{ steps.wp.outputs.version }}
                   delete-branch: true
 
