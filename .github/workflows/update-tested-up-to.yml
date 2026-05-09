@@ -1,0 +1,61 @@
+name: Update Tested up to
+
+on:
+    schedule:
+        - cron: '0 9 * * 1'
+    workflow_dispatch:
+
+permissions:
+    contents: write
+    pull-requests: write
+
+jobs:
+    update:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+
+            - name: Get latest WordPress version
+              id: wp
+              run: |
+                  latest=$(curl -fsSL https://api.wordpress.org/core/version-check/1.7/ | jq -r '.offers[0].version')
+                  short=$(echo "$latest" | awk -F. '{print $1"."$2}')
+                  echo "version=$short" >> "$GITHUB_OUTPUT"
+                  echo "Latest WordPress: $latest (short: $short)"
+
+            - name: Update readme.txt
+              id: update
+              run: |
+                  current=$(grep -i '^Tested up to:' readme.txt | head -1 | sed -E 's/^[Tt]ested up to:[[:space:]]+//' | tr -d '\r')
+                  if [ "$current" = "${{ steps.wp.outputs.version }}" ]; then
+                      echo "Already on latest ($current); nothing to do."
+                      echo "updated=false" >> "$GITHUB_OUTPUT"
+                      exit 0
+                  fi
+                  sed -i -E "s/^([Tt]ested up to:[[:space:]]+).*/\1${{ steps.wp.outputs.version }}/" readme.txt
+                  {
+                      echo "updated=true"
+                      echo "previous=$current"
+                  } >> "$GITHUB_OUTPUT"
+                  echo "Bumped Tested up to: $current -> ${{ steps.wp.outputs.version }}"
+
+            - name: Create Pull Request
+              if: steps.update.outputs.updated == 'true'
+              id: pr
+              uses: peter-evans/create-pull-request@v7
+              with:
+                  commit-message: "Bump Tested up to ${{ steps.wp.outputs.version }}"
+                  title: "Bump Tested up to ${{ steps.wp.outputs.version }}"
+                  body: |
+                      WordPress ${{ steps.wp.outputs.version }} is now the latest stable release.
+
+                      Bumps `Tested up to` in readme.txt from ${{ steps.update.outputs.previous }} to ${{ steps.wp.outputs.version }}.
+                  branch: chore/tested-up-to-${{ steps.wp.outputs.version }}
+                  delete-branch: true
+
+            - name: Auto-merge PR
+              if: steps.pr.outputs.pull-request-number
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  gh pr merge --squash --delete-branch "${{ steps.pr.outputs.pull-request-number }}"
