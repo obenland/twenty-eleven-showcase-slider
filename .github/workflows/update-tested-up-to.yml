@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
     update:
+        if: github.ref == 'refs/heads/trunk'
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v6
@@ -75,6 +76,7 @@ jobs:
               id: pr
               uses: peter-evans/create-pull-request@v8
               with:
+                  base: trunk
                   commit-message: 'Bump Tested up to ${{ steps.wp.outputs.version }}'
                   title: 'Bump Tested up to ${{ steps.wp.outputs.version }}'
                   body: |
@@ -84,9 +86,33 @@ jobs:
                   branch: chore/tested-up-to-${{ steps.wp.outputs.version }}
                   delete-branch: true
 
-            - name: Auto-merge PR
+            - name: Auto-merge PR and wait
               if: steps.pr.outputs.pull-request-number
+              shell: bash
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  PR: ${{ steps.pr.outputs.pull-request-number }}
               run: |
-                  gh pr merge --auto --squash --delete-branch "${{ steps.pr.outputs.pull-request-number }}"
+                  set -euo pipefail
+                  # Enable auto-merge so the PR queues if any required checks are added later.
+                  gh pr merge --auto --squash --delete-branch "$PR"
+                  # Wait for the merge to actually complete before downstream steps run,
+                  # so the SVN sync below cannot publish ahead of trunk.
+                  for _ in $(seq 1 60); do
+                      merged_at=$(gh pr view "$PR" --json mergedAt --jq '.mergedAt')
+                      if [ "$merged_at" != "null" ] && [ -n "$merged_at" ]; then
+                          echo "PR #$PR merged at $merged_at"
+                          exit 0
+                      fi
+                      sleep 10
+                  done
+                  echo "PR #$PR did not merge within 10 minutes" >&2
+                  exit 1
+
+            - name: Sync readme to WordPress.org SVN
+              if: success() && steps.pr.outputs.pull-request-number
+              uses: 10up/action-wordpress-plugin-asset-update@stable
+              env:
+                  SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+                  SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+                  IGNORE_OTHER_FILES: true
