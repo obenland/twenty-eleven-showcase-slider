@@ -9,6 +9,10 @@ permissions:
     contents: write
     pull-requests: write
 
+concurrency:
+    group: update-tested-up-to
+    cancel-in-progress: false
+
 jobs:
     update:
         runs-on: ubuntu-latest
@@ -17,35 +21,59 @@ jobs:
 
             - name: Get latest WordPress version
               id: wp
+              shell: bash
               run: |
+                  set -euo pipefail
                   latest=$(curl -fsSL https://api.wordpress.org/core/version-check/1.7/ | jq -r '.offers[0].version')
+                  if ! [[ "$latest" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+                    echo "Unexpected WordPress version: '$latest'" >&2
+                    exit 1
+                  fi
                   short=$(echo "$latest" | awk -F. '{print $1"."$2}')
+                  if ! [[ "$short" =~ ^[0-9]+\.[0-9]+$ ]]; then
+                    echo "Failed to derive major.minor from '$latest'" >&2
+                    exit 1
+                  fi
                   echo "version=$short" >> "$GITHUB_OUTPUT"
                   echo "Latest WordPress: $latest (short: $short)"
 
             - name: Update readme.txt
               id: update
+              shell: bash
               run: |
+                  set -euo pipefail
+                  target='${{ steps.wp.outputs.version }}'
                   current=$(grep -i '^Tested up to:' readme.txt | head -1 | sed -E 's/^[Tt]ested up to:[[:space:]]+//' | tr -d '\r')
-                  if [ "$current" = "${{ steps.wp.outputs.version }}" ]; then
-                      echo "Already on latest ($current); nothing to do."
-                      echo "updated=false" >> "$GITHUB_OUTPUT"
-                      exit 0
+                  if [ -z "$current" ]; then
+                    echo "Could not find 'Tested up to:' header in readme.txt" >&2
+                    exit 1
                   fi
-                  sed -i -E "s/^([Tt]ested up to:[[:space:]]+).*/\1${{ steps.wp.outputs.version }}/" readme.txt
+                  # Only bump if current is strictly older than target (never downgrade).
+                  older=$(printf '%s\n%s\n' "$current" "$target" | sort -V | head -1)
+                  if [ "$current" = "$target" ] || [ "$older" != "$current" ]; then
+                    echo "Current ($current) is at or ahead of target ($target); nothing to do."
+                    echo "updated=false" >> "$GITHUB_OUTPUT"
+                    exit 0
+                  fi
+                  sed -i -E "s/^([Tt]ested up to:[[:space:]]+).*/\1$target/" readme.txt
+                  new=$(grep -i '^Tested up to:' readme.txt | head -1 | sed -E 's/^[Tt]ested up to:[[:space:]]+//' | tr -d '\r')
+                  if [ "$new" != "$target" ]; then
+                    echo "sed did not produce expected value (got '$new')" >&2
+                    exit 1
+                  fi
                   {
-                      echo "updated=true"
-                      echo "previous=$current"
+                    echo "updated=true"
+                    echo "previous=$current"
                   } >> "$GITHUB_OUTPUT"
-                  echo "Bumped Tested up to: $current -> ${{ steps.wp.outputs.version }}"
+                  echo "Bumped Tested up to: $current -> $target"
 
             - name: Create Pull Request
               if: steps.update.outputs.updated == 'true'
               id: pr
               uses: peter-evans/create-pull-request@v7
               with:
-                  commit-message: "Bump Tested up to ${{ steps.wp.outputs.version }}"
-                  title: "Bump Tested up to ${{ steps.wp.outputs.version }}"
+                  commit-message: 'Bump Tested up to ${{ steps.wp.outputs.version }}'
+                  title: 'Bump Tested up to ${{ steps.wp.outputs.version }}'
                   body: |
                       WordPress ${{ steps.wp.outputs.version }} is now the latest stable release.
 
@@ -58,4 +86,4 @@ jobs:
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                  gh pr merge --squash --delete-branch "${{ steps.pr.outputs.pull-request-number }}"
+                  gh pr merge --auto --squash --delete-branch "${{ steps.pr.outputs.pull-request-number }}"
