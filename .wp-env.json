@@ -1,12 +1,8 @@
 {
 	"core": null,
 	"phpVersion": "8.3",
-	"plugins": [
-		"."
-	],
-	"themes": [
-		"https://downloads.wordpress.org/theme/twentyeleven.zip"
-	],
+	"plugins": [ "." ],
+	"themes": [ "https://downloads.wordpress.org/theme/twentyeleven.zip" ],
 	"config": {
 		"WP_DEBUG": true,
 		"WP_DEBUG_LOG": true,
