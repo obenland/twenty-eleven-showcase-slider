@@ -1,0 +1,19 @@
+{
+	"core": null,
+	"phpVersion": "8.3",
+	"plugins": [
+		"."
+	],
+	"themes": [
+		"https://downloads.wordpress.org/theme/twentyeleven.zip"
+	],
+	"config": {
+		"WP_DEBUG": true,
+		"WP_DEBUG_LOG": true,
+		"SCRIPT_DEBUG": true,
+		"WP_DEFAULT_THEME": "twentyeleven"
+	},
+	"lifecycleScripts": {
+		"afterStart": "wp-env run cli wp theme activate twentyeleven"
+	}
+}
