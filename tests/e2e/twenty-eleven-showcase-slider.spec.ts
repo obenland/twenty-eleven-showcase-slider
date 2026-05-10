@@ -49,15 +49,15 @@ test.describe( 'Twenty Eleven Showcase Slider', () => {
 			.count();
 		expect( sliderScripts ).toBe( 0 );
 
-		// The theme's default `twentyeleven-showcase` script should still
-		// be present here — the plugin only dequeues it on the Showcase
-		// template. Note: the theme only enqueues this script on pages
-		// using the showcase template too, so on a *plain* page neither
-		// the plugin nor the theme has a reason to enqueue it. The real
-		// regression risk is that the plugin somehow dequeues the theme
-		// script even outside the template; on a plain page the count
-		// is expected to be 0 for both, which is the same as "the plugin
-		// did not dequeue something the theme didn't enqueue."
+		// On a plain (non-showcase-template) page neither Twenty Eleven
+		// nor this plugin enqueues the `twentyeleven-showcase` script —
+		// the theme only registers it for showcase-template pages. So
+		// the count of theme `showcase.js` tags is expected to be 0
+		// here. Paired with the showcase-template test below, this
+		// pins that the plugin only dequeues the theme script on the
+		// template (it can't dequeue what isn't enqueued in the first
+		// place) and doesn't accidentally enqueue it outside that
+		// narrow window either.
 		const themeShowcaseScripts = await page
 			.locator( 'script[src*="/themes/twentyeleven/js/showcase"]' )
 			.count();
