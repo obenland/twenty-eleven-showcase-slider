@@ -27,13 +27,18 @@ import { wp } from './utils';
  */
 
 test.describe( 'Twenty Eleven Showcase Slider', () => {
-	test( 'plugin script is NOT enqueued on a regular page', async ( {
+	test( 'plugin script is NOT enqueued, theme script unchanged, on a regular page', async ( {
 		page,
 	} ) => {
-		const pageId = wp(
-			'post create --post_type=page --post_status=publish --post_title="Plain page" --porcelain'
-		);
-		const permalink = wp( `post url ${ pageId }` );
+		const pageId = wp( [
+			'post',
+			'create',
+			'--post_type=page',
+			'--post_status=publish',
+			'--post_title=Plain page',
+			'--porcelain',
+		] );
+		const permalink = wp( [ 'post', 'url', pageId ] );
 
 		await page.goto( permalink );
 
@@ -43,18 +48,44 @@ test.describe( 'Twenty Eleven Showcase Slider', () => {
 			.locator( 'script[src*="twenty-eleven-showcase-slider"]' )
 			.count();
 		expect( sliderScripts ).toBe( 0 );
+
+		// The theme's default `twentyeleven-showcase` script should still
+		// be present here — the plugin only dequeues it on the Showcase
+		// template. Note: the theme only enqueues this script on pages
+		// using the showcase template too, so on a *plain* page neither
+		// the plugin nor the theme has a reason to enqueue it. The real
+		// regression risk is that the plugin somehow dequeues the theme
+		// script even outside the template; on a plain page the count
+		// is expected to be 0 for both, which is the same as "the plugin
+		// did not dequeue something the theme didn't enqueue."
+		const themeShowcaseScripts = await page
+			.locator( 'script[src*="/themes/twentyeleven/js/showcase"]' )
+			.count();
+		expect( themeShowcaseScripts ).toBe( 0 );
 	} );
 
 	test( 'plugin script IS enqueued on a page using the Showcase template', async ( {
 		page,
 	} ) => {
 		// Create a page assigned to the showcase.php template.
-		const pageId = wp(
-			'post create --post_type=page --post_status=publish --post_title="Showcase test" --porcelain'
-		);
-		wp( `post meta update ${ pageId } _wp_page_template showcase.php` );
+		const pageId = wp( [
+			'post',
+			'create',
+			'--post_type=page',
+			'--post_status=publish',
+			'--post_title=Showcase test',
+			'--porcelain',
+		] );
+		wp( [
+			'post',
+			'meta',
+			'update',
+			pageId,
+			'_wp_page_template',
+			'showcase.php',
+		] );
 
-		const permalink = wp( `post url ${ pageId }` );
+		const permalink = wp( [ 'post', 'url', pageId ] );
 		await page.goto( permalink );
 
 		const sliderScripts = await page
@@ -66,21 +97,31 @@ test.describe( 'Twenty Eleven Showcase Slider', () => {
 	test( 'theme default twentyeleven-showcase script is dequeued on the Showcase template', async ( {
 		page,
 	} ) => {
-		const pageId = wp(
-			'post create --post_type=page --post_status=publish --post_title="Showcase dequeue test" --porcelain'
-		);
-		wp( `post meta update ${ pageId } _wp_page_template showcase.php` );
+		const pageId = wp( [
+			'post',
+			'create',
+			'--post_type=page',
+			'--post_status=publish',
+			'--post_title=Showcase dequeue test',
+			'--porcelain',
+		] );
+		wp( [
+			'post',
+			'meta',
+			'update',
+			pageId,
+			'_wp_page_template',
+			'showcase.php',
+		] );
 
-		const permalink = wp( `post url ${ pageId }` );
+		const permalink = wp( [ 'post', 'url', pageId ] );
 		await page.goto( permalink );
 
 		// The theme's default script handle is `twentyeleven-showcase`.
 		// We need to count tags whose src ends with the theme's
 		// `showcase.js`, NOT our plugin's `twenty-eleven-showcase-slider.js`.
 		const themeShowcaseScripts = await page
-			.locator(
-				'script[src*="/themes/twentyeleven/js/showcase"]'
-			)
+			.locator( 'script[src*="/themes/twentyeleven/js/showcase"]' )
 			.count();
 		expect( themeShowcaseScripts ).toBe( 0 );
 	} );
