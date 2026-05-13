@@ -15,4 +15,5 @@ jobs:
                   SKIP_ASSETS: true
                   SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
                   SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+                  README_NAME: README.md
                   IGNORE_OTHER_FILES: true
