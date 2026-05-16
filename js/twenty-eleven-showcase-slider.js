@@ -10,8 +10,30 @@
 ( function () {
 	'use strict';
 
+	/**
+	 * Milliseconds between auto-advance ticks.
+	 */
 	var INTERVAL = 4000;
 
+	/**
+	 * Toggle a featured-post section's visibility.
+	 *
+	 * @param {Element|null} el      The section to show or hide. No-op when null.
+	 * @param {boolean}      visible True to show, false to hide.
+	 */
+	function setVisible( el, visible ) {
+		if ( ! el ) {
+			return;
+		}
+		el.style.opacity = visible ? '1' : '0';
+		el.style.visibility = visible ? 'visible' : 'hidden';
+	}
+
+	/**
+	 * Wire up the carousel: bind click handlers, start the auto-advance
+	 * timer, and register the listeners that pause it when the slider is
+	 * offscreen or the tab is hidden.
+	 */
 	function init() {
 		var slides = document.querySelectorAll( '.feature-slider a' );
 
@@ -24,11 +46,6 @@
 			'matchMedia' in window &&
 			window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
 
-		/*
-		 * Map each slide anchor to the featured-post section it controls.
-		 * Done once at init so we never re-query the DOM during the auto-
-		 * advance loop.
-		 */
 		var posts = [];
 		for ( var i = 0; i < slides.length; i++ ) {
 			posts.push( document.querySelector( slides[ i ].hash ) );
@@ -45,21 +62,19 @@
 		var timer = 0;
 		var onScreen = true;
 
+		/**
+		 * Advance the carousel to a specific slide.
+		 *
+		 * @param {number} index Target slide index. Wraps modulo slides.length.
+		 */
 		function showSlide( index ) {
-			index =
-				( ( index % slides.length ) + slides.length ) % slides.length;
+			index = index % slides.length;
 			if ( index === current ) {
 				return;
 			}
 
-			if ( posts[ current ] ) {
-				posts[ current ].style.opacity = '0';
-				posts[ current ].style.visibility = 'hidden';
-			}
-			if ( posts[ index ] ) {
-				posts[ index ].style.opacity = '1';
-				posts[ index ].style.visibility = 'visible';
-			}
+			setVisible( posts[ current ], false );
+			setVisible( posts[ index ], true );
 
 			slides[ current ].classList.remove( 'active' );
 			slides[ index ].classList.add( 'active' );
@@ -67,6 +82,9 @@
 			current = index;
 		}
 
+		/**
+		 * Cancel the pending auto-advance tick, if any.
+		 */
 		function stop() {
 			if ( timer ) {
 				clearInterval( timer );
@@ -74,6 +92,10 @@
 			}
 		}
 
+		/**
+		 * (Re)start the auto-advance timer. No-op when the carousel should
+		 * stay paused (reduced motion, tab hidden, slider offscreen).
+		 */
 		function start() {
 			stop();
 			if ( reduceMotion || document.hidden || ! onScreen ) {
@@ -84,17 +106,13 @@
 			}, INTERVAL );
 		}
 
-		for ( var k = 0; k < slides.length; k++ ) {
-			slides[ k ].addEventListener( 'click', function ( event ) {
+		slides.forEach( function ( slide, index ) {
+			slide.addEventListener( 'click', function ( event ) {
 				event.preventDefault();
-				showSlide( Array.prototype.indexOf.call( slides, this ) );
-				/*
-				 * Restart the auto-advance timer so the user gets the
-				 * full INTERVAL window with the slide they just picked.
-				 */
+				showSlide( index );
 				start();
 			} );
-		}
+		} );
 
 		document.addEventListener( 'visibilitychange', function () {
 			if ( document.hidden ) {
@@ -104,9 +122,13 @@
 			}
 		} );
 
-		if ( slider && 'IntersectionObserver' in window ) {
+		if ( 'IntersectionObserver' in window ) {
 			var observer = new IntersectionObserver( function ( entries ) {
-				onScreen = entries[ 0 ].isIntersecting;
+				var visible = entries[ 0 ].isIntersecting;
+				if ( visible === onScreen ) {
+					return;
+				}
+				onScreen = visible;
 				if ( onScreen ) {
 					start();
 				} else {
@@ -119,9 +141,5 @@
 		start();
 	}
 
-	if ( 'loading' === document.readyState ) {
-		document.addEventListener( 'DOMContentLoaded', init );
-	} else {
-		init();
-	}
+	init();
 } )();
