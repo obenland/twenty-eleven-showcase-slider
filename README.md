@@ -4,7 +4,7 @@ Tags: twentyeleven, slider
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=3DBDUTYMCVRG4
 Requires at least: 3.1
 Tested up to: 6.9
-Stable tag: 3
+Stable tag: 4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,11 @@ None asked yet.
 
 
 ## Changelog
+
+### 4
+* Rewrote the carousel script in vanilla JS — no more jQuery dependency.
+* Auto-advance now pauses when the tab is hidden, when the slider scrolls offscreen, and when the visitor prefers reduced motion.
+* Clicking a slide now resets the auto-advance timer.
 
 ### 3
 * Maintenance release.
