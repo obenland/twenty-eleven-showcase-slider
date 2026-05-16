@@ -6,11 +6,13 @@
 	"devDependencies": {
 		"@playwright/test": "^1.60.0",
 		"@wordpress/env": "^11.6.0",
-		"@wordpress/scripts": "^32.2.0"
+		"@wordpress/scripts": "^32.2.0",
+		"terser": "^5.47.1"
 	},
 	"scripts": {
 		"wp-env": "wp-env",
 		"format": "wp-scripts format",
+		"build": "terser js/twenty-eleven-showcase-slider.js --compress --mangle --comments false --output js/twenty-eleven-showcase-slider.min.js",
 		"start": "wp-env start",
 		"stop": "wp-env stop",
 		"destroy": "wp-env destroy",
