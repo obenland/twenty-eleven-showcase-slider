@@ -1,0 +1,37 @@
+{
+	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
+	"meta": {
+		"title": "Twenty Eleven Showcase Slider — Live Preview",
+		"description": "Sticky featured posts auto-rotate on the Twenty Eleven Showcase template."
+	},
+	"landingPage": "/",
+	"preferredVersions": {
+		"php": "8.3",
+		"wp": "latest"
+	},
+	"phpExtensionBundles": [ "kitchen-sink" ],
+	"login": true,
+	"steps": [
+		{
+			"step": "installTheme",
+			"themeData": {
+				"resource": "wordpress.org/themes",
+				"slug": "twentyeleven"
+			},
+			"options": {
+				"activate": true
+			}
+		},
+		{
+			"step": "installPlugin",
+			"pluginData": {
+				"resource": "wordpress.org/plugins",
+				"slug": "twenty-eleven-showcase-slider"
+			}
+		},
+		{
+			"step": "runPHP",
+			"code": "<?php\nrequire_once '/wordpress/wp-load.php';\nrequire_once ABSPATH . 'wp-admin/includes/file.php';\nrequire_once ABSPATH . 'wp-admin/includes/image.php';\n\nupdate_option( 'permalink_structure', '/%postname%/' );\n\n$entries = array(\n\tarray( 'The Quiet Mountains',     array( 90, 110, 130 ) ),\n\tarray( 'A City After Rain',       array( 70, 90, 110 ) ),\n\tarray( 'Morning at the Harbor',   array( 200, 150, 80 ) ),\n\tarray( 'Across the Open Plains',  array( 160, 140, 100 ) ),\n\tarray( 'Light Through the Trees', array( 110, 140, 90 ) ),\n);\n\n$uploads = wp_upload_dir();\n$sticky  = array();\n\nforeach ( $entries as $i => $entry ) {\n\tlist( $title, $rgb ) = $entry;\n\n\t$post_id = wp_insert_post( array(\n\t\t'post_title'   => $title,\n\t\t'post_content' => 'A featured story to demonstrate the Twenty Eleven Showcase Slider carousel.',\n\t\t'post_status'  => 'publish',\n\t\t'post_type'    => 'post',\n\t) );\n\n\t/*\n\t * GD-generated placeholder so the preview looks like a real showcase\n\t * without needing outbound network access. 1000x288 matches the\n\t * theme's `feature-image large` threshold so each post lays out as\n\t * the wide hero variant.\n\t */\n\t$image = imagecreatetruecolor( 1000, 288 );\n\t$bg    = imagecolorallocate( $image, $rgb[0], $rgb[1], $rgb[2] );\n\timagefilledrectangle( $image, 0, 0, 1000, 288, $bg );\n\t$ink   = imagecolorallocate( $image, 255, 255, 255 );\n\t$x     = (int) ( ( 1000 - imagefontwidth( 5 ) * strlen( $title ) ) / 2 );\n\timagestring( $image, 5, $x, 130, $title, $ink );\n\n\t$filename = 'showcase-' . ( $i + 1 ) . '.png';\n\t$path     = trailingslashit( $uploads['path'] ) . $filename;\n\timagepng( $image, $path );\n\timagedestroy( $image );\n\n\t$attachment_id = wp_insert_attachment(\n\t\tarray(\n\t\t\t'post_mime_type' => 'image/png',\n\t\t\t'post_title'     => $title,\n\t\t\t'post_status'    => 'inherit',\n\t\t),\n\t\t$path,\n\t\t$post_id\n\t);\n\twp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $path ) );\n\tset_post_thumbnail( $post_id, $attachment_id );\n\n\t$sticky[] = $post_id;\n}\n\nupdate_option( 'sticky_posts', $sticky );\n\n$page_id = wp_insert_post( array(\n\t'post_title'   => 'Showcase',\n\t'post_content' => '',\n\t'post_status'  => 'publish',\n\t'post_type'    => 'page',\n\t'meta_input'   => array( '_wp_page_template' => 'showcase.php' ),\n) );\n\nupdate_option( 'show_on_front', 'page' );\nupdate_option( 'page_on_front', $page_id );\n\nflush_rewrite_rules();\n"
+		}
+	]
+}
