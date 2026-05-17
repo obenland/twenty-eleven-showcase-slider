@@ -2,6 +2,7 @@
 	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
 	"meta": {
 		"title": "Twenty Eleven Showcase Slider — Live Preview",
+		"author": "obenland",
 		"description": "Sticky featured posts auto-rotate on the Twenty Eleven Showcase template."
 	},
 	"landingPage": "/",
