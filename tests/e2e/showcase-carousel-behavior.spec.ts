@@ -216,27 +216,33 @@ test.describe
 		expect( stillActiveHash ).toBe( secondHash );
 	} );
 
-	test.describe( 'with prefers-reduced-motion', () => {
-		test.use( { reducedMotion: 'reduce' } );
+	test( 'does NOT auto-advance with prefers-reduced-motion', async ( {
+		page,
+	} ) => {
+		/*
+		 * `page.emulateMedia` is set explicitly before navigation
+		 * rather than via `test.use({ reducedMotion })` because the
+		 * latter's interaction with `test.describe.serial` isn't
+		 * reliable — the option doesn't always propagate to the inner
+		 * context, so the script saw matchMedia.matches=false at init.
+		 */
+		await page.emulateMedia( { reducedMotion: 'reduce' } );
+		await page.goto( showcaseUrl );
 
-		test( 'does NOT auto-advance', async ( { page } ) => {
-			await page.goto( showcaseUrl );
+		const initiallyActiveHash = await page
+			.locator( '.feature-slider a.active' )
+			.getAttribute( 'href' );
 
-			const initiallyActiveHash = await page
-				.locator( '.feature-slider a.active' )
-				.getAttribute( 'href' );
+		/*
+		 * Wait well past one carousel interval. The active slide must
+		 * not have changed.
+		 */
+		await page.waitForTimeout( 5_000 );
 
-			/*
-			 * Wait well past one carousel interval. The active slide
-			 * must not have changed.
-			 */
-			await page.waitForTimeout( 5_000 );
-
-			const activeHashAfter = await page
-				.locator( '.feature-slider a.active' )
-				.getAttribute( 'href' );
-			expect( activeHashAfter ).toBe( initiallyActiveHash );
-		} );
+		const activeHashAfter = await page
+			.locator( '.feature-slider a.active' )
+			.getAttribute( 'href' );
+		expect( activeHashAfter ).toBe( initiallyActiveHash );
 	} );
 
 	test( 'pauses auto-advance when the tab becomes hidden', async ( {
