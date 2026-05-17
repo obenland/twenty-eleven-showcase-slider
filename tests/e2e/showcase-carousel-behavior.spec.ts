@@ -52,12 +52,15 @@ function provisionShowcaseSite(): string {
 		 * stable image per seed, which keeps tests deterministic — but
 		 * if the network blips, the post just ends up as a text-only
 		 * showcase entry, which is still enough for the carousel tests.
+		 *
+		 * The `.jpg` suffix isn't decorative — wp-cli sniffs the file
+		 * type from the URL's extension and refuses URLs without one.
 		 */
 		try {
 			wp( [
 				'media',
 				'import',
-				`https://picsum.photos/seed/showcase-e2e-${ i }/1000/288`,
+				`https://picsum.photos/seed/showcase-e2e-${ i }/1000/288.jpg`,
 				`--post_id=${ postId }`,
 				'--featured_image',
 				'--porcelain',
