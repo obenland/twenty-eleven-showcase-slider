@@ -7,7 +7,7 @@
 		"@playwright/test": "^1.60.0",
 		"@wordpress/env": "^11.6.0",
 		"@wordpress/scripts": "^32.2.0",
-		"terser": "^5.47.1"
+		"terser": "^5.48.0"
 	},
 	"scripts": {
 		"wp-env": "wp-env",
