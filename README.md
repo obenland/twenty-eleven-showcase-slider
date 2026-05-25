@@ -3,7 +3,7 @@ Contributors: obenland
 Tags: twentyeleven, slider
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=3DBDUTYMCVRG4
 Requires at least: 3.1
-Tested up to: 6.9
+Tested up to: 7.0
 Stable tag: 4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
