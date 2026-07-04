@@ -4,7 +4,7 @@
 	"private": true,
 	"description": "Adds carousel functionality to the Twenty Eleven Showcase template.",
 	"devDependencies": {
-		"@playwright/test": "^1.61.0",
+		"@playwright/test": "^1.61.1",
 		"@wordpress/env": "^11.10.0",
 		"@wordpress/scripts": "^32.4.1",
 		"terser": "^5.48.0"
